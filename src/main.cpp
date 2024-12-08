@@ -14,6 +14,7 @@ Scheduler userScheduler;
 struct SectionData {
   int freeSpots = -1;
   int entranceScore = 0;
+  int elevatorScore = 0;
 };
 
 std::map<String, SectionData> receivedSpots;
@@ -52,18 +53,24 @@ void loop() {
 // Function definitions:
 // Function to broadcast free parking spots to the mesh
 void sendMessage() {
+  // local Section message
   String msg;
 
   // Append data for each section: "A 5 B 3 C 4 D 6 E 2"
-  for (const auto &section : receivedSpots) {
-    if (section.second.freeSpots != -1) {
-      msg += section.first + " " + String(section.second.freeSpots) + " " +
-             String(section.second.entranceScore) + " ";
+  if(receivedSpots.size() > 0) {
+    for (const auto &section : receivedSpots) {
+      if (section.second.freeSpots != -1) {
+        msg += section.first + " " + String(section.second.freeSpots) + " " +
+              String(section.second.entranceScore) + " " + String(section.second.elevatorScore) + " ";
+      }
     }
+    receivedSpots.clear();
   }
-  mesh.sendBroadcast(msg);
-  // taskSendMessage.setInterval(random(TASK_SECOND * 1, TASK_SECOND * 5)); // Randomize broadcast interval
-  Serial.println("Sending: " + msg);
+  if (msg.length() > 0) {
+    mesh.sendBroadcast(msg); 
+    Serial.println("Sending: " + msg); 
+  }
+  // taskSendMessage.setInterval(random(TASK_SECOND * 1, TASK_SECOND * 2)); // Randomize broadcast interval
 }
 
 // Callback for receiving messages from the mesh
@@ -81,16 +88,19 @@ void receivedCallback(uint32_t from, String &msg) {
     spaceIdx = msg.indexOf(' ', index);
     int spots = msg.substring(index, spaceIdx).toInt();
     index = spaceIdx + 1;
+
+    spaceIdx = msg.indexOf(' ', index);
+    int entranceScore = msg.substring(index, spaceIdx).toInt();
+    index = spaceIdx + 1;
     
     // read entrance Score
     // Note: The End condition is for last score -> (spaceIdx == -1)
     spaceIdx = msg.indexOf(' ', index); 
-    int entranceScore = (spaceIdx == -1) ? msg.substring(index).toInt() : msg.substring(index, spaceIdx).toInt();
+    int elevatorScore = (spaceIdx == -1) ? msg.substring(index).toInt() : msg.substring(index, spaceIdx).toInt();
     index = (spaceIdx == -1) ? msg.length() : spaceIdx + 1;
      
-    receivedSpots[section] = {spots, entranceScore};
-    Serial.printf("Updated section %s: spots=%d, entrance=%d\n", section.c_str(), spots, entranceScore);
-
+    receivedSpots[section] = {spots, entranceScore, elevatorScore};
+    Serial.printf("Updated section %s: spots=%d, entrance=%d, elevator=%d\n", section.c_str(), spots, entranceScore, elevatorScore);
   }
 }
 
