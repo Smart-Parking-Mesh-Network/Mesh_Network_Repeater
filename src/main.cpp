@@ -70,7 +70,7 @@ void sendMessage() {
     mesh.sendBroadcast(msg); 
     Serial.println("Sending: " + msg); 
   }
-  // taskSendMessage.setInterval(random(TASK_SECOND * 1, TASK_SECOND * 2)); // Randomize broadcast interval
+  taskSendMessage.setInterval(random(TASK_SECOND * 1, TASK_SECOND * 2)); // Randomize broadcast interval
 }
 
 // Callback for receiving messages from the mesh
